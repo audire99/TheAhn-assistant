@@ -22,6 +22,9 @@ client_name = st.sidebar.text_input("의뢰인 성함", placeholder="홍길동")
 if not client_name:
     client_name = "OOO"
 
+# 10분 단위 시간 선택지 생성 (08:00 ~ 19:50)
+time_options = [f"{h:02d}:{m:02d}" for h in range(8, 20) for m in range(0, 60, 10)]
+
 # -------------------------------------------------------------
 # 📂 1. 사건 시작 & 접수 단계
 # -------------------------------------------------------------
@@ -78,15 +81,18 @@ elif category == "2. 재판 진행 & 기일 안내":
     )
     
     if sub_category in ["(민사, 가사 등) 재판 기일 안내", "(민사, 가사 등) 조정기일 안내", "기일 변경 안내"]:
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns([2, 2, 2, 3])
         with col1:
             date_input = st.date_input("기일 날짜")
         with col2:
-            time_input = st.time_input("기일 시간")
+            selected_time = st.selectbox("시간 선택 (10분 단위)", options=time_options, index=37) # 14:10 디폴트값 근처
         with col3:
+            custom_time = st.text_input("✍️ 시간 직접 입력 (선택지에 없는 경우만)", placeholder="예: 14:15")
+        with col4:
             court_room = st.text_input("법정 호수", placeholder="제229호 법정")
             
-        formatted_datetime = f"{date_input.strftime('%Y.%m.%d.')} {court_room} {time_input.strftime('%H:%M')}"
+        final_time = custom_time if custom_time else selected_time
+        formatted_datetime = f"{date_input.strftime('%Y.%m.%d.')} {court_room} {final_time}"
         
         if sub_category == "(민사, 가사 등) 재판 기일 안내":
             text_output = f"""법률사무소 더안입니다. 
@@ -147,15 +153,18 @@ elif category == "3. 재판 결과 & 선고 안내":
     )
     
     if "선고기일 안내" in sub_category:
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns([2, 2, 2, 3])
         with col1:
             date_input = st.date_input("선고 날짜")
         with col2:
-            time_input = st.time_input("선고 시간")
+            selected_time = st.selectbox("시간 선택 (10분 단위)", options=time_options, index=37)
         with col3:
+            custom_time = st.text_input("✍️ 시간 직접 입력 (선택지에 없는 경우만)", placeholder="예: 14:15")
+        with col4:
             court_room = st.text_input("법정 호수", placeholder="제229호 법정")
             
-        formatted_datetime = f"{date_input.strftime('%Y.%m.%d.')} 선고기일({court_room} {time_input.strftime('%H:%M')})"
+        final_time = custom_time if custom_time else selected_time
+        formatted_datetime = f"{date_input.strftime('%Y.%m.%d.')} 선고기일({court_room} {final_time})"
         
         if "피고인 출석 필요" in sub_category:
             st.warning("⚠️ 형사사건 선고입니다. 피고인 본인의 직접 출석이 필요함을 명시합니다.")
@@ -290,6 +299,6 @@ st.subheader("📋 생성된 카카오톡 안내 문구")
 # 결과 출력용 텍스트 에어리어 (직접 일부 편집할 수 있도록 지원)
 final_text = st.text_area("카카오톡으로 복사하여 전송할 메시지 내용", value=text_output, height=350)
 
-# Streamlit 내장 클립보드 복사 유틸리티 사용 가능
+# 복사 완료 버튼 클릭 시 알림 제공
 if st.button("📋 단톡방 문구 복사하기", type="primary"):
     st.toast("문구가 임시저장소(클립보드)에 성공적으로 복사되었습니다! 카톡방에 바로 붙여넣기(Ctrl+V) 하세요.")
