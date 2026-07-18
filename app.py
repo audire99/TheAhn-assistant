@@ -77,34 +77,50 @@ elif category == "2. 재판 진행 & 기일 안내":
     st.subheader("📂 재판 진행 & 기일 안내")
     sub_category = st.selectbox(
         "안내 유형 선택",
-        ["(민사, 가사 등) 재판 기일 안내", "(민사, 가사 등) 조정기일 안내", "기일 변경 안내", "소송 진행 중 서면 송달 안내"]
+        [
+            "(민사, 가사 등) 재판 기일 안내", 
+            "(형사) 공판기일 안내",
+            "(민사, 가사 등) 조정기일 안내", 
+            "기일 변경 안내 (민사, 가사 등 - 본인 출석 X)", 
+            "기일 변경 안내 (형사 공판기일 - 본인 출석 필수!)", 
+            "소송 진행 중 서면 송달 안내",
+            "가압류신청 담보제공명령 안내"
+        ]
     )
     
-    if sub_category in ["(민사, 가사 등) 재판 기일 안내", "(민사, 가사 등) 조정기일 안내", "기일 변경 안내"]:
+    # 시간 및 기일 정보 입력 창 공통 UI (서면송달 및 가압류 제외)
+    if sub_category not in ["소송 진행 중 서면 송달 안내", "가압류신청 담보제공명령 안내"]:
         col1, col2, col3, col4 = st.columns([2, 2, 2, 3])
         with col1:
-            date_input = st.date_input("기일 날짜")
+            date_input = st.date_input("기일/공판 날짜")
         with col2:
-            selected_time = st.selectbox("시간 선택 (10분 단위)", options=time_options, index=37) # 14:10 디폴트값 근처
+            selected_time = st.selectbox("시간 선택 (10분 단위)", options=time_options, index=37)
         with col3:
             custom_time = st.text_input("✍️ 시간 직접 입력 (선택지에 없는 경우만)", placeholder="예: 14:15")
         with col4:
             court_room = st.text_input("법정 호수", placeholder="제229호 법정")
             
         final_time = custom_time if custom_time else selected_time
-        formatted_datetime = f"{date_input.strftime('%Y.%m.%d.')} {court_room} {final_time}"
-        
+        formatted_datetime = f"{date_input.strftime('%Y.%m.%d.')} 기일/공판 정보 ({court_room} {final_time})"
+
         if sub_category == "(민사, 가사 등) 재판 기일 안내":
             text_output = f"""법률사무소 더안입니다. 
 {client_name} 님 사건의 변론기일이 지정되어 안내드립니다. 
-{formatted_datetime}
+{date_input.strftime('%Y.%m.%d.')} 변론기일({court_room} {final_time})
 
 변론기일에는 변호사님이 출석하여 진행될 예정이니, 의뢰인께서는 편하신 대로 참석 여부를 정하시면 됩니다. 출석을 원하시는 경우 미리 말씀해 주시면 감사하겠습니다."""
+
+        elif sub_category == "(형사) 공판기일 안내":
+            st.warning("⚠️ 형사 사건 공판기일입니다. 피고인 본인 출석 필수 안내가 포함됩니다.")
+            text_output = f"""법률사무소 더안입니다. {client_name} 님 사건의 공판기일이 지정되어 안내드립니다. 
+{date_input.strftime('%Y.%m.%d.')} 공판기일({court_room} {final_time})
+  
+형사 사건의 공판기일에는 변호사님과 함께, 피고인 본인도 직접 출석하셔야 합니다."""
 
         elif sub_category == "(민사, 가사 등) 조정기일 안내":
             text_output = f"""법률사무소 더안입니다. 
 {client_name} 님 사건의 조정기일이 지정되어 안내드립니다. 
-{formatted_datetime}
+{date_input.strftime('%Y.%m.%d.')} 조정기일({court_room} {final_time})
 
 조정기일에는 변호사님이 출석하여 진행되며, 의뢰인께서 함께 참석하시면 보다 신속하고 원활한 의사결정을 할 수 있어 조정 진행에 큰 도움이 됩니다. 
 
@@ -113,12 +129,20 @@ elif category == "2. 재판 진행 & 기일 안내":
 참석 여부를 알려주시면 그에 맞춰 준비하도록 하겠습니다.
 궁금하신 사항이 있으시면 언제든지 연락주시기 바랍니다."""
 
-        elif sub_category == "기일 변경 안내":
+        elif sub_category == "기일 변경 안내 (민사, 가사 등 - 본인 출석 X)":
             text_output = f"""법률사무소 더안입니다. 
 {client_name} 님 사건의 변론기일이 변경되어 안내드립니다. 
-{formatted_datetime}
-
+{date_input.strftime('%Y.%m.%d.')} 변론기일({court_room} {final_time})
+  
 변론기일에는 변호사님이 출석하시니 당사자 본인은 별도로 출석하지 않으셔도 무방합니다. 출석을 희망하시는 경우 미리 말씀해주시면 감사하겠습니다."""
+
+        elif sub_category == "기일 변경 안내 (형사 공판기일 - 본인 출석 필수!)":
+            st.error("🚨 형사 공판기일 변경입니다. 피고인 본인이 반드시 직접 출석해야 함을 안내합니다.")
+            text_output = f"""법률사무소 더안입니다. 
+{client_name} 님 사건의 공판기일이 변경되어 안내드립니다. 
+{date_input.strftime('%Y.%m.%d.')} 공판기일({court_room} {final_time})
+  
+형사 사건의 공판기일에는 변호사님과 함께, 피고인 본인도 직접 출석하셔야 합니다."""
 
     elif sub_category == "소송 진행 중 서면 송달 안내":
         doc_date = st.text_input("상대방 서면 날짜", placeholder="2026. 06. 24.")
@@ -133,68 +157,6 @@ elif category == "2. 재판 진행 & 기일 안내":
 • 그 밖에 의견이나 문의사항이 있으시면 말씀해 주십시오.
 
 변호사님이 서면을 면밀히 검토한 후, 구체적인 대응방안을 함께 논의드리겠습니다."""
-
-# -------------------------------------------------------------
-# 📂 3. 재판 결과 & 선고 안내
-# -------------------------------------------------------------
-elif category == "3. 재판 결과 & 선고 안내":
-    st.subheader("📂 재판 결과 & 선고 안내")
-    sub_category = st.selectbox(
-        "안내 유형 선택",
-        [
-            "(형사 사건) 선고기일 안내 - 피고인 출석 필요!",
-            "(형사 외 사건) 선고기일 안내 - 출석 불필요",
-            "선고 결과 안내",
-            "조정조서 전달",
-            "가압류신청 담보제공명령 안내",
-            "문서 열람 여부 의사 확인 (판결문/화해권고결정 등)",
-            "열람 문서 전달 및 항소/이의기한 안내"
-        ]
-    )
-    
-    if "선고기일 안내" in sub_category:
-        col1, col2, col3, col4 = st.columns([2, 2, 2, 3])
-        with col1:
-            date_input = st.date_input("선고 날짜")
-        with col2:
-            selected_time = st.selectbox("시간 선택 (10분 단위)", options=time_options, index=37)
-        with col3:
-            custom_time = st.text_input("✍️ 시간 직접 입력 (선택지에 없는 경우만)", placeholder="예: 14:15")
-        with col4:
-            court_room = st.text_input("법정 호수", placeholder="제229호 법정")
-            
-        final_time = custom_time if custom_time else selected_time
-        formatted_datetime = f"{date_input.strftime('%Y.%m.%d.')} 선고기일({court_room} {final_time})"
-        
-        if "피고인 출석 필요" in sub_category:
-            st.warning("⚠️ 형사사건 선고입니다. 피고인 본인의 직접 출석이 필요함을 명시합니다.")
-            text_output = f"""법률사무소 더안입니다. 
-{client_name} 님 사건의 선고기일이 지정되어 안내드립니다. 
-{formatted_datetime}
-
-형사 사건의 선고기일에는 피고인 본인이 직접 출석하셔야 합니다. 선고기일에는 변론이 진행되지 않아 변호사님은 출석하지 않으니 참고해 주시기 바랍니다."""
-        else:
-            text_output = f"""법률사무소 더안입니다. 
-{client_name} 님 사건의 선고기일이 지정되어 안내드립니다. 
-{formatted_datetime}
-
-선고기일에는 출석하지 않으셔도 됩니다. 선고 내용 확인 후 안내드리겠습니다."""
-
-    elif sub_category == "선고 결과 안내":
-        result_text = st.text_area("구두 선고 결과 내용", placeholder="예: 원고 청구 기각, 소송비용 원고 부담")
-        text_output = f"""법률사무소 더안입니다. 금일 {client_name} 님 사건의 판결선고 결과를 안내드립니다.
-“ {result_text} ”
-
-※ 위 내용은 법정에서 구두 선고내용을 정리한 것으로, 일부 정확하지 않을 수 있습니다. 판결문 송달 후 정확한 내용을 전달드리겠습니다. 판결문 송달은 선고일로부터 통상 2일 내외로 소요되니 참고해 주시기 바랍니다."""
-
-    elif sub_category == "조정조서 전달":
-        text_output = f"""안녕하세요, 법률사무소 더안입니다.
-
-금일 법원으로부터 귀하 사건의 조정조서가 송달되어 전달드립니다.
-첨부된 문서를 꼭 확인해 주시기 바랍니다.
-
-조정조서는 송달과 함께 효력이 발생하고 양 당사자의 송달로서 확정됩니다. 
-감사합니다."""
 
     elif sub_category == "가압류신청 담보제공명령 안내":
         st.warning("⚠️ 담보제공명령은 기한 준수가 매우 중요합니다.")
@@ -225,10 +187,60 @@ elif category == "3. 재판 결과 & 선고 안내":
 🔹 유의사항
 • 법원에서 정한 기한({due_date_str}) 내에 증권 발급이 완료되어야 가압류 절차가 진행될 수 있으니, 가급적 빠른 연락 부탁드립니다."""
 
+# -------------------------------------------------------------
+# 📂 3. 재판 결과 & 선고 안내
+# -------------------------------------------------------------
+elif category == "3. 재판 결과 & 선고 안내":
+    st.subheader("📂 재판 결과 & 선고 안내")
+    sub_category = st.selectbox(
+        "안내 유형 선택",
+        [
+            "(형사 사건) 선고기일 안내 - 피고인 출석 필요!",
+            "(형사 외 사건) 선고기일 안내 - 출석 불필요",
+            "선고 결과 안내",
+            "문서 열람 여부 의사 확인 (판결문/화해권고결정 등)",
+            "판결문 등 전달 및 항소/이의기한 안내"
+        ]
+    )
+    
+    if "선고기일 안내" in sub_category:
+        col1, col2, col3, col4 = st.columns([2, 2, 2, 3])
+        with col1:
+            date_input = st.date_input("선고 날짜")
+        with col2:
+            selected_time = st.selectbox("시간 선택 (10분 단위)", options=time_options, index=37)
+        with col3:
+            custom_time = st.text_input("✍️ 시간 직접 입력 (선택지에 없는 경우만)", placeholder="예: 14:15")
+        with col4:
+            court_room = st.text_input("법정 호수", placeholder="제229호 법정")
+            
+        final_time = custom_time if custom_time else selected_time
+        
+        if "피고인 출석 필요" in sub_category:
+            st.warning("⚠️ 형사사건 선고입니다. 피고인 본인의 직접 출석이 필요함을 명시합니다.")
+            text_output = f"""법률사무소 더안입니다. 
+{client_name} 님 사건의 선고기일이 지정되어 안내드립니다. 
+{date_input.strftime('%Y.%m.%d.')} 선고기일({court_room} {final_time})
+
+형사 사건의 선고기일에는 피고인 본인이 직접 출석하셔야 합니다. 선고기일에는 변론이 진행되지 않아 변호사님은 출석하지 않으니 참고해 주시기 바랍니다."""
+        else:
+            text_output = f"""법률사무소 더안입니다. 
+{client_name} 님 사건의 선고기일이 지정되어 안내드립니다. 
+{date_input.strftime('%Y.%m.%d.')} 판결선고기일({court_room} {final_time})
+
+선고기일에는 출석하지 않으셔도 됩니다. 선고 내용 확인 후 안내드리겠습니다."""
+
+    elif sub_category == "선고 결과 안내":
+        result_text = st.text_area("구두 선고 결과 내용", placeholder="예: 원고 청구 기각, 소송비용 원고 부담")
+        text_output = f"""법률사무소 더안입니다. 금일 {client_name} 님 사건의 판결선고 결과를 안내드립니다.
+“ {result_text} ”
+
+※ 위 내용은 법정에서 구두 선고내용을 정리한 것으로, 일부 정확하지 않을 수 있습니다. 판결문 송달 후 정확한 내용을 전달드리겠습니다. 판결문 송달은 선고일로부터 통상 2일 내외로 소요되니 참고해 주시기 바랍니다."""
+
     elif sub_category == "문서 열람 여부 의사 확인 (판결문/화해권고결정 등)":
         st.info("💡 안내: 송달 완료 전, 상대방의 열람 시점을 탐색하고 조율하는 단계입니다. PDF를 아직 단톡방에 송부하지 마세요.")
         case_num = st.text_input("사건번호", placeholder="2026가단50000")
-        doc_type = st.selectbox("송달 문서 종류", ["판결문", "조정갈음결정", "화해권고결정"])
+        doc_type = st.selectbox("송달 문서 종류", ["판결문", "조정갈음결정", "화해권고결정", "결정문"])
         
         text_output = f"""법률사무소 더안입니다.
 
@@ -242,7 +254,7 @@ elif category == "3. 재판 결과 & 선고 안내":
 
 의견 주시면 그에 맞춰 진행하도록 하겠습니다."""
 
-    elif sub_category == "열람 문서 전달 및 항소/이의기한 안내":
+    elif sub_category == "판결문 등 전달 및 항소/이의기한 안내":
         st.error("🚨 중요: 마감일 도과 방지 및 기한 고지가 필수인 대화입니다.")
         view_date = st.date_input("실제 문서 열람일(송달일)")
         
@@ -256,7 +268,7 @@ elif category == "3. 재판 결과 & 선고 안내":
         
         text_output = f"""법률사무소 더안입니다.
 
-{client_name} 님, 판결문 열람하여 전달드립니다.
+{client_name} 님, 판결문 등 열람하여 전달드립니다.
 첨부된 문서를 꼭 확인해 주시기 바랍니다.
 
 판결에 불복하시는 경우, 판결문을 받은 날로부터 14일 이내에 항소장을 제출해야 합니다. 
@@ -272,10 +284,19 @@ elif category == "4. 소송 종결 & 확정":
     st.subheader("📂 소송 종결 & 확정 단계")
     sub_category = st.selectbox(
         "안내 유형 선택",
-        ["이혼 사건 확정 및 종결 안내"]
+        ["조정조서 전달", "이혼신고 안내"]
     )
     
-    if sub_category == "이혼 사건 확정 및 종결 안내":
+    if sub_category == "조정조서 전달":
+        text_output = f"""안녕하세요, 법률사무소 더안입니다.
+
+금일 법원으로부터 귀하 사건의 조정조서가 송달되어 전달드립니다.
+첨부된 문서를 꼭 확인해 주시기 바랍니다.
+
+조정조서는 송달과 함께 효력이 발생하고 양 당사자의 송달로서 확정됩니다. 
+감사합니다."""
+
+    elif sub_category == "이혼신고 안내":
         text_output = f"""법률사무소 더안입니다.
 진행하신 이혼 사건이 확정, 종결되었습니다. 이혼신고를 완료하셔야 모든 절차가 마무리되오니, 아래 안내사항을 확인해 주시기 바랍니다.
   
