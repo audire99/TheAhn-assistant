@@ -88,7 +88,6 @@ elif category == "2. 재판 진행 & 기일 안내":
         ]
     )
     
-    # 시간 및 기일 정보 입력 창 공통 UI (서면송달 및 가압류 제외)
     if sub_category not in ["소송 진행 중 서면 송달 안내", "가압류신청 담보제공명령 안내"]:
         col1, col2, col3, col4 = st.columns([2, 2, 2, 3])
         with col1:
@@ -101,7 +100,7 @@ elif category == "2. 재판 진행 & 기일 안내":
             court_room = st.text_input("법정 호수", placeholder="제229호 법정")
             
         final_time = custom_time if custom_time else selected_time
-        formatted_datetime = f"{date_input.strftime('%Y.%m.%d.')} 기일/공판 정보 ({court_room} {final_time})"
+        formatted_datetime = f"{date_input.strftime('%Y.%m.%d.')} {court_room} {final_time}"
 
         if sub_category == "(민사, 가사 등) 재판 기일 안내":
             text_output = f"""법률사무소 더안입니다. 
@@ -312,7 +311,7 @@ elif category == "4. 소송 종결 & 확정":
 (우편 발송 후 부재 등으로 수령이 어려우신 경우 반송되어 절차가 지연될 수 있으니 유의해 주시기 바랍니다.)"""
 
 # -------------------------------------------------------------
-# 📋 출력 화면 및 복사하기 기능 제공
+# 📋 출력 화면 및 확실한 자바스크립트 기반 복사 버튼 제공
 # -------------------------------------------------------------
 st.markdown("---")
 st.subheader("📋 생성된 카카오톡 안내 문구")
@@ -320,6 +319,45 @@ st.subheader("📋 생성된 카카오톡 안내 문구")
 # 결과 출력용 텍스트 에어리어 (직접 일부 편집할 수 있도록 지원)
 final_text = st.text_area("카카오톡으로 복사하여 전송할 메시지 내용", value=text_output, height=350)
 
-# 복사 완료 버튼 클릭 시 알림 제공
-if st.button("📋 단톡방 문구 복사하기", type="primary"):
-    st.toast("문구가 임시저장소(클립보드)에 성공적으로 복사되었습니다! 카톡방에 바로 붙여넣기(Ctrl+V) 하세요.")
+# 줄바꿈 처리가 안전하게 적용되도록 자바스크립트 가공
+escaped_text = final_text.replace("\\", "\\\\").replace("`", "\\`").replace("\n", "\\n").replace("\r", "\\r")
+
+# 자바스크립트를 이용해 클립보드에 강제 복사하는 HTML 버튼 생성
+copy_button_html = f"""
+    <button onclick="copyToClipboard()" style="
+        background-color: #f44336; 
+        color: white; 
+        padding: 12px 24px; 
+        border: none; 
+        border-radius: 6px; 
+        cursor: pointer; 
+        font-size: 16px;
+        font-weight: bold;
+        width: 100%;
+        margin-top: 10px;
+    ">📋 단톡방 문구 복사하기 (클릭)</button>
+
+    <script>
+    function copyToClipboard() {{
+        const text = `{escaped_text}`;
+        
+        // 텍스트 영역을 만들어 화면 밖에서 복사 수행
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        
+        try {{
+            document.execCommand('copy');
+            alert("✅ 문구가 클립보드에 성공적으로 복사되었습니다!\\n카톡방에 붙여넣기(Ctrl+V) 하세요.");
+        }} catch (err) {{
+            alert("❌ 복사에 실패했습니다. 문구를 드래그하여 직접 복사해 주세요.");
+        }}
+        
+        document.body.removeChild(textarea);
+    }}
+    </script>
+"""
+
+# HTML을 스트림릿 앱에 렌더링
+st.components.v1.html(copy_button_html, height=70)
