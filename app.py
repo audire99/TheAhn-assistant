@@ -291,7 +291,7 @@ elif category == "2. 재판 진행 & 기일 안내":
 {client_name} 님 사건의 변론기일이 변경되어 안내드립니다. 
 {date_str} 변론기일({court_room} {final_time})
   
-변론기일에는 변호사님이 출석하시니당사자 본인은 별도로 출석하지 않으셔도 무방합니다. 출석을 희망하시는 경우 미리 말씀해주시면 감사하겠습니다."""
+변론기일에는 변호사님이 출석하시니 당사자 본인은 별도로 출석하지 않으셔도 무방합니다. 출석을 희망하시는 경우 미리 말씀해주시면 감사하겠습니다."""
 
         elif sub_category == "기일 변경 안내 (형사 공판기일 - 본인 출석 필수!)":
             st.error("🚨 형사 공판기일 변경입니다. 피고인 본인이 반드시 직접 출석해야 함을 안내합니다.")
@@ -382,9 +382,8 @@ elif category == "3. 재판 결과 & 선고 안내":
 
     elif sub_category == "문서 열람 여부 의사 확인 (판결문/화해권고결정 등)":
         case_num = st.text_input("사건번호", placeholder="2026가단50000")
-        doc_type = st.selectbox("송달 문서 종류", ["판결문", "조정갈음결정", "화해권고결정", "결정문"])
+        doc_type = st.selectbox("송달 문서 종류", ["판결문", "조정갈음결정", "화해권고결정", "결정문"], key="check_doc_type")
         
-        # 동적 문구 분기 로직 (조정갈음/화해권고는 '이의신청 기한', 판결문 등은 '항소 기한')
         if doc_type in ["조정갈음결정", "화해권고결정"]:
             st.info(f"💡 안내: 송달 완료 전, 상대방의 열람 시점을 탐색하고 조율하는 단계입니다. PDF를 아직 단톡방에 송부하지 마세요.")
             limit_word = "이의신청 기한은"
@@ -412,6 +411,7 @@ elif category == "3. 재판 결과 & 선고 안내":
 
     elif sub_category == "판결문 등 전달 및 항소/이의기한 안내":
         st.error("🚨 중요: 마감일 도과 방지 및 기한 고지가 필수인 대화입니다.")
+        doc_type = st.selectbox("송달 문서 종류 선택", ["판결문", "조정갈음결정", "화해권고결정", "결정문"], key="send_doc_type")
         view_date = st.date_input("실제 문서 열람일(송달일)")
         
         limit_date = view_date + timedelta(days=14)
@@ -420,16 +420,34 @@ elif category == "3. 재판 결과 & 선고 안내":
         limit_date_str = limit_date.strftime('%Y. %m. %d.')
         notice_date_str = notice_date.strftime('%Y. %m. %d.')
         
+        # 문서 성격에 따른 불복 명칭 및 문구 분기 자동화
+        if doc_type in ["조정갈음결정", "화해권고결정"]:
+            action_word = "결정에"
+            form_word = "이의신청서를"
+            limit_word = "이의신청기한은"
+            intent_word = "이의신청 의사가"
+        elif doc_type == "결정문":
+            st.error("⚠️ [직원 필독] 일반 결정문은 불복 기한이 14일이 아닐 수 있습니다(예: 즉시항고 7일 등). 반드시 확인 후 필요시 수동 편집하세요!")
+            action_word = "결정에"
+            form_word = "불복(항고 등) 신청서를"
+            limit_word = "불복기한은"
+            intent_word = "불복 의사가"
+        else:
+            action_word = "판결에"
+            form_word = "항소장을"
+            limit_word = "항소기한은"
+            intent_word = "항소 의사가"
+            
         text_output = f"""법률사무소 더안입니다.
 
-{client_name} 님, 판결문 등 열람하여 전달드립니다.
+{client_name} 님, {doc_type} 열람하여 전달드립니다.
 첨부된 문서를 꼭 확인해 주시기 바랍니다.
 
-판결에 불복하시는 경우, 판결문을 받은 날로부터 14일 이내에 항소장을 제출해야 합니다. 
+{action_word} 불복하시는 경우, {doc_type}을 받은 날로부터 14일 이내에 {form_word} 제출해야 합니다. 
 
-항소기한은 {limit_date_str}까지입니다. 
+{limit_word} {limit_date_str}까지입니다. 
 
-항소 의사가 있으신 경우, 기한 2일 전인 {notice_date_str}까지 미리 알려주셔야 차질 없이 항소장을 제출할 수 있습니다. 추가 설명이나 상담이 필요하시면 연락 주시기 바랍니다."""
+{intent_word} 있으신 경우, 기한 2일 전인 {notice_date_str}까지 미리 알려주셔야 차질 없이 {form_word} 제출할 수 있습니다. 추가 설명이나 상담이 필요하시면 연락 주시기 바랍니다."""
 
 # -------------------------------------------------------------
 # 📂 4. 소송 종결 & 확정 단계
